@@ -1,0 +1,5 @@
+import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { db } from "@/lib/db";
+import { signSession, Role } from "@/lib/auth";
+export async function POST(request: Request) { const { email, password, role } = await request.json(); if(!email||!password||!role)return NextResponse.json({error:"Enter your email and password."},{status:400}); const [rows]=await db.execute("SELECT id, full_name, password_hash, role, status FROM users WHERE email = ? LIMIT 1",[String(email).trim().toLowerCase()]); const user=(rows as any[])[0]; if(!user||user.status!=="ACTIVE"||user.role!==role||!(await bcrypt.compare(String(password),user.password_hash)))return NextResponse.json({error:"Your details do not match this account type."},{status:401}); const response=NextResponse.json({ok:true}); response.cookies.set("followhim_session",await signSession({id:user.id,name:user.full_name,role:user.role as Role}),{httpOnly:true,sameSite:"lax",secure:process.env.NODE_ENV==="production",path:"/",maxAge:604800}); return response; }

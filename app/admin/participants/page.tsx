@@ -1,0 +1,6 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
+import { db } from "@/lib/db";
+import ParticipantForm from "./participant-form";
+export default async function Participants(){const session=await getSession();if(session?.role!=="ADMIN")redirect("/dashboard");const [rows]=await db.query("SELECT u.full_name,u.email,u.phone,p.conversion_date,p.current_week FROM users u JOIN participant_profiles p ON u.id=p.user_id ORDER BY p.created_at DESC");return <main className="content" style={{maxWidth:1100,margin:"auto"}}><Link className="brand" href="/dashboard">← FOLLOW<span>HIM</span></Link><div className="top" style={{marginTop:30}}><div><div className="eyebrow">Administrator area</div><h1>New converts</h1><p>Register a participant, then assign them to a supervisor group.</p></div></div><section className="panel"><h2>Register a new convert</h2><ParticipantForm/></section><section className="panel"><h2>Registered participants</h2>{(rows as any[]).length?<div style={{display:"grid",gap:10}}>{(rows as any[]).map(p=><div key={p.email} style={{borderBottom:"1px solid #eee",padding:"11px 0"}}><b>{p.full_name}</b><br/><small>{p.email} · Week {p.current_week}</small></div>)}</div>:<div className="empty">No participants are registered yet.</div>}</section></main>;}
